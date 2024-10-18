@@ -67,13 +67,14 @@ jobs:
                       section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket}) - {title}\n"
                   else:
                       section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket})\n"
-              return section + "\n"
+              return section
 
           def clean_pr_body(body):
-              # Remove only the Jira Tickets section
-              pattern = r'Jira Tickets:\n\n(?:(?!\n\n).)*(?:\n(?!Original PR Description:).*)*\n*'
+              # Remove everything up to and including the delimiter
+              pattern = r'^.*?(?=\n-{3,}\n)'
               cleaned_body = re.sub(pattern, '', body, flags=re.DOTALL)
-              return cleaned_body.strip()
+              # If the pattern didn't match (i.e., no delimiter found), return the original body
+              return cleaned_body.strip() if cleaned_body else body.strip()
 
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
@@ -102,7 +103,8 @@ jobs:
 
           # Create new PR body
           new_jira_section = create_jira_section(sorted_tickets)
-          new_body = new_jira_section + cleaned_body
+          delimiter = "\n---\n"  # Clear delimiter
+          new_body = new_jira_section + delimiter + cleaned_body
 
           print(f"Debug: New Jira section:\n{new_jira_section}")
 
