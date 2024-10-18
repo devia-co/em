@@ -21,28 +21,45 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install PyGithub
+          pip install PyGithub requests
 
       - name: Extract and update Jira tickets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_ACTION_TOKEN }}
         run: |
           python - <<EOF
           import re
           import os
+          import requests
           from github import Github
 
           def extract_jira_tickets(text):
               return re.findall(r'SCRUM-\d+', text)
+
+          def get_jira_ticket_info(ticket):
+              url = f"{os.environ['JIRA_BASE_URL']}/rest/api/3/issue/{ticket}"
+              auth = (os.environ['JIRA_USER_EMAIL'], os.environ['JIRA_API_TOKEN'])
+              response = requests.get(url, auth=auth)
+              if response.status_code == 200:
+                  data = response.json()
+                  return data['fields']['summary']
+              return None
 
           def create_jira_section(tickets):
               if not tickets:
                   return ""
               section = "Jira Tickets:\n\n"
               for ticket in tickets:
-                  section += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
+                  title = get_jira_ticket_info(ticket)
+                  if title:
+                      section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket}) - {title}\n"
+                  else:
+                      section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket})\n"
               return section + "\n"
 
           g = Github(os.environ['GITHUB_TOKEN'])
