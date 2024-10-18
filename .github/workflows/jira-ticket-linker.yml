@@ -14,11 +14,25 @@
           def extract_jira_tickets(text):
               return re.findall(r'SCRUM-\d+', text)
 
+          def create_jira_section(tickets):
+              section = "Jira Tickets:\n\n"
+              for ticket in tickets:
+                  section += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
+              return section + "\n"
+
           def clean_pr_body(body):
-              # Remove everything up to and including the last "Jira Tickets:" section
-              pattern = r'^(.*\n)*?Jira Tickets:(\n|.)*?(?=\n\n|\Z)'
-              cleaned_body = re.sub(pattern, '', body, flags=re.MULTILINE | re.DOTALL)
-              return cleaned_body.strip()
+              # Remove any existing Jira Tickets section
+              lines = body.split('\n')
+              cleaned_lines = []
+              skip = False
+              for line in lines:
+                  if line.strip() == "Jira Tickets:":
+                      skip = True
+                  elif skip and line.strip() == "":
+                      skip = False
+                  elif not skip:
+                      cleaned_lines.append(line)
+              return '\n'.join(cleaned_lines).strip()
 
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
@@ -38,15 +52,10 @@
           new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)  # Remove existing tickets from title
           new_title += ' ' + ' '.join(sorted_tickets)
 
-          # Create new Jira tickets section
-          new_jira_section = "Jira Tickets:\n\n"
-          for ticket in sorted_tickets:
-              new_jira_section += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
-          new_jira_section += "\n"
-
           # Clean existing body and add new Jira section
           existing_body = pr.body or ""
           cleaned_body = clean_pr_body(existing_body)
+          new_jira_section = create_jira_section(sorted_tickets)
           new_body = new_jira_section + cleaned_body
 
           # Update PR
