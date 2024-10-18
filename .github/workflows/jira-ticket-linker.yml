@@ -45,7 +45,7 @@ jobs:
 
           def get_jira_ticket_info(ticket):
               url = f"{os.environ['JIRA_BASE_URL']}/rest/api/3/issue/{ticket}"
-              auth = (os.environ['JIRA_USER_EMAIL'], os.environ['JIRA_ACTION_TOKEN'])
+              auth = (os.environ['JIRA_USER_EMAIL'], os.environ['JIRA_API_TOKEN'])
               try:
                   response = requests.get(url, auth=auth)
                   response.raise_for_status()
