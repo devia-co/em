@@ -70,8 +70,8 @@ jobs:
               return section + "\n"
 
           def clean_pr_body(body):
-              # Remove all existing Jira Tickets sections
-              pattern = r'Jira Tickets:\n\n(?:(?!\n\n).)*(?:\n(?!Original PR Description:).*)*'
+              # Remove only the Jira Tickets section
+              pattern = r'Jira Tickets:\n\n(?:(?!\n\n).)*(?:\n(?!Original PR Description:).*)*\n*'
               cleaned_body = re.sub(pattern, '', body, flags=re.DOTALL)
               return cleaned_body.strip()
 
@@ -102,7 +102,7 @@ jobs:
 
           # Create new PR body
           new_jira_section = create_jira_section(sorted_tickets)
-          new_body = new_jira_section + "Original PR Description:\n\n" + cleaned_body
+          new_body = new_jira_section + cleaned_body
 
           print(f"Debug: New Jira section:\n{new_jira_section}")
 
