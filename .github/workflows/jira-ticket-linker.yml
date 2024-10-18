@@ -2,7 +2,7 @@ name: Jira Ticket Linker
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, reopened, edited]
 
 jobs:
   update-pr:
