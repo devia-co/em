@@ -1,27 +1,4 @@
-name: Jira Ticket Linker
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened, edited]
-
-jobs:
-  update-pr:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install PyGithub
+# ... (previous parts of the workflow remain the same)
 
       - name: Extract and update Jira tickets
         env:
@@ -37,9 +14,9 @@ jobs:
           def extract_jira_tickets(text):
               return re.findall(r'SCRUM-\d+', text)
 
-          def remove_existing_jira_section(body):
-              pattern = r'Jira Tickets:\n\n(?:\* \[SCRUM-\d+\].*\n)*\n---\n'
-              return re.sub(pattern, '', body, flags=re.DOTALL)
+          def remove_all_jira_sections(body):
+              pattern = r'Jira Tickets:\n\n(?:[\s\S]*?)(?=\n\n|\Z)'
+              return re.sub(pattern, '', body)
 
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
@@ -60,15 +37,15 @@ jobs:
           new_title += ' ' + ' '.join(sorted_tickets)
 
           # Update PR body
-          new_body = "Jira Tickets:\n\n"
+          new_jira_section = "Jira Tickets:\n\n"
           for ticket in sorted_tickets:
-              new_body += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
-          new_body += "\n---\n"
+              new_jira_section += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
+          new_jira_section += "\n"
           
-          # Remove existing Jira section and add the new one
+          # Remove all existing Jira sections and add the new one
           existing_body = pr.body or ""
-          cleaned_body = remove_existing_jira_section(existing_body)
-          new_body += cleaned_body
+          cleaned_body = remove_all_jira_sections(existing_body)
+          new_body = new_jira_section + cleaned_body.strip()
 
           # Update PR
           pr.edit(title=new_title, body=new_body)
