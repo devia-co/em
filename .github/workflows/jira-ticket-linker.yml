@@ -69,6 +69,12 @@ jobs:
                       section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket})\n"
               return section + "\n"
 
+          def clean_pr_body(body):
+              # Remove all existing Jira Tickets sections
+              pattern = r'Jira Tickets:\n\n(?:(?!\n\n).)*(?:\n(?!Original PR Description:).*)*'
+              cleaned_body = re.sub(pattern, '', body, flags=re.DOTALL)
+              return cleaned_body.strip()
+
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
           pr = repo.get_pull(int(os.environ['PR_NUMBER']))
@@ -91,9 +97,12 @@ jobs:
 
           print(f"Debug: New PR title: {new_title}")
 
+          # Clean existing PR body
+          cleaned_body = clean_pr_body(pr.body or "")
+
           # Create new PR body
           new_jira_section = create_jira_section(sorted_tickets)
-          new_body = new_jira_section + "Original PR Description:\n\n" + (pr.body or "")
+          new_body = new_jira_section + "Original PR Description:\n\n" + cleaned_body
 
           print(f"Debug: New Jira section:\n{new_jira_section}")
 
