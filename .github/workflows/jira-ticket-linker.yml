@@ -37,6 +37,10 @@ jobs:
           def extract_jira_tickets(text):
               return re.findall(r'SCRUM-\d+', text)
 
+          def remove_existing_jira_section(body):
+              pattern = r'Jira Tickets:\n\n(?:\* \[SCRUM-\d+\].*\n)*\n---\n'
+              return re.sub(pattern, '', body, flags=re.DOTALL)
+
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
           pr = repo.get_pull(int(os.environ['PR_NUMBER']))
@@ -52,16 +56,19 @@ jobs:
           sorted_tickets = sorted(list(tickets))
 
           # Update PR title
-          new_title = pr.title
-          for ticket in sorted_tickets:
-              if ticket not in new_title:
-                  new_title += f" {ticket}"
+          new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)  # Remove existing tickets from title
+          new_title += ' ' + ' '.join(sorted_tickets)
 
           # Update PR body
           new_body = "Jira Tickets:\n\n"
           for ticket in sorted_tickets:
               new_body += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
-          new_body += "\n---\n" + (pr.body or "")
+          new_body += "\n---\n"
+          
+          # Remove existing Jira section and add the new one
+          existing_body = pr.body or ""
+          cleaned_body = remove_existing_jira_section(existing_body)
+          new_body += cleaned_body
 
           # Update PR
           pr.edit(title=new_title, body=new_body)
