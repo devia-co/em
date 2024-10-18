@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, reopened, edited]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   update-pr:
     runs-on: ubuntu-latest
@@ -69,12 +73,12 @@ jobs:
                       section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket})\n"
               return section
 
-          def clean_pr_body(body):
-              # Remove everything up to and including the delimiter
-              pattern = r'^.*?(?=\n-{3,}\n)'
-              cleaned_body = re.sub(pattern, '', body, flags=re.DOTALL)
-              # If the pattern didn't match (i.e., no delimiter found), return the original body
-              return cleaned_body.strip() if cleaned_body else body.strip()
+          def split_pr_body(body):
+              delimiter = "\n---\n"
+              parts = body.split(delimiter, 1)
+              if len(parts) > 1:
+                  return parts[1].strip()
+              return body.strip()
 
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
@@ -98,13 +102,13 @@ jobs:
 
           print(f"Debug: New PR title: {new_title}")
 
-          # Clean existing PR body
-          cleaned_body = clean_pr_body(pr.body or "")
+          # Split existing PR body
+          original_description = split_pr_body(pr.body or "")
 
           # Create new PR body
           new_jira_section = create_jira_section(sorted_tickets)
           delimiter = "\n---\n"  # Clear delimiter
-          new_body = new_jira_section + delimiter + cleaned_body
+          new_body = new_jira_section + delimiter + original_description if new_jira_section else original_description
 
           print(f"Debug: New Jira section:\n{new_jira_section}")
 
