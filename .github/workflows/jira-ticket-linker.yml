@@ -14,9 +14,11 @@
           def extract_jira_tickets(text):
               return re.findall(r'SCRUM-\d+', text)
 
-          def remove_all_jira_sections(body):
-              pattern = r'Jira Tickets:\n\n(?:[\s\S]*?)(?=\n\n|\Z)'
-              return re.sub(pattern, '', body)
+          def clean_pr_body(body):
+              # Remove everything up to and including the last "Jira Tickets:" section
+              pattern = r'^(.*\n)*?Jira Tickets:(\n|.)*?(?=\n\n|\Z)'
+              cleaned_body = re.sub(pattern, '', body, flags=re.MULTILINE | re.DOTALL)
+              return cleaned_body.strip()
 
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
@@ -36,16 +38,16 @@
           new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)  # Remove existing tickets from title
           new_title += ' ' + ' '.join(sorted_tickets)
 
-          # Update PR body
+          # Create new Jira tickets section
           new_jira_section = "Jira Tickets:\n\n"
           for ticket in sorted_tickets:
               new_jira_section += f"* [{ticket}](https://deviaco.atlassian.net/browse/{ticket})\n"
           new_jira_section += "\n"
-          
-          # Remove all existing Jira sections and add the new one
+
+          # Clean existing body and add new Jira section
           existing_body = pr.body or ""
-          cleaned_body = remove_all_jira_sections(existing_body)
-          new_body = new_jira_section + cleaned_body.strip()
+          cleaned_body = clean_pr_body(existing_body)
+          new_body = new_jira_section + cleaned_body
 
           # Update PR
           pr.edit(title=new_title, body=new_body)
