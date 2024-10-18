@@ -30,7 +30,7 @@ jobs:
           REPO: ${{ github.repository }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_ACTION_TOKEN }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           python - <<EOF
           import re
@@ -39,16 +39,23 @@ jobs:
           from github import Github
 
           def extract_jira_tickets(text):
-              return re.findall(r'SCRUM-\d+', text)
+              tickets = re.findall(r'SCRUM-\d+', text)
+              print(f"Debug: Extracted tickets: {tickets}")
+              return tickets
 
           def get_jira_ticket_info(ticket):
               url = f"{os.environ['JIRA_BASE_URL']}/rest/api/3/issue/{ticket}"
-              auth = (os.environ['JIRA_USER_EMAIL'], os.environ['JIRA_API_TOKEN'])
-              response = requests.get(url, auth=auth)
-              if response.status_code == 200:
+              auth = (os.environ['JIRA_USER_EMAIL'], os.environ['JIRA_ACTION_TOKEN'])
+              try:
+                  response = requests.get(url, auth=auth)
+                  response.raise_for_status()
                   data = response.json()
-                  return data['fields']['summary']
-              return None
+                  title = data['fields']['summary']
+                  print(f"Debug: Retrieved title for {ticket}: {title}")
+                  return title
+              except Exception as e:
+                  print(f"Error fetching info for {ticket}: {str(e)}")
+                  return None
 
           def create_jira_section(tickets):
               if not tickets:
@@ -76,14 +83,25 @@ jobs:
           # Sort tickets
           sorted_tickets = sorted(list(tickets))
 
+          print(f"Debug: Extracted tickets: {sorted_tickets}")
+
           # Update PR title
           new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)  # Remove existing tickets from title
           new_title += ' ' + ' '.join(sorted_tickets)
+
+          print(f"Debug: New PR title: {new_title}")
 
           # Create new PR body
           new_jira_section = create_jira_section(sorted_tickets)
           new_body = new_jira_section + "Original PR Description:\n\n" + (pr.body or "")
 
+          print(f"Debug: New Jira section:\n{new_jira_section}")
+
           # Update PR
-          pr.edit(title=new_title, body=new_body)
+          try:
+              pr.edit(title=new_title, body=new_body)
+              print("Debug: Successfully updated PR")
+          except Exception as e:
+              print(f"Error updating PR: {str(e)}")
+
           EOF
