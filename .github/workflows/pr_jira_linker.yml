@@ -21,6 +21,7 @@ jobs:
         uses: ./.github/actions/jira-issue-linker
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
           jira_base_url: ${{ secrets.JIRA_BASE_URL }}
           jira_user_email: ${{ secrets.JIRA_USER_EMAIL }}
           jira_api_token: ${{ secrets.JIRA_ACTION_TOKEN }}
