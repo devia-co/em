@@ -1,0 +1,46 @@
+name: 'Jira Issue Linker'
+description: 'Links Jira issues to GitHub pull requests'
+inputs:
+  github_token:
+    description: 'GitHub token'
+    required: true
+  pr_number:
+    description: 'Pull request number'
+    required: true
+  repo:
+    description: 'GitHub repository'
+    required: true
+  jira_base_url:
+    description: 'Jira base URL'
+    required: true
+  jira_user_email:
+    description: 'Jira user email'
+    required: true
+  jira_api_token:
+    description: 'Jira API token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install PyGithub==1.55 requests==2.26.0
+      shell: bash
+
+    - name: Run Jira Issue Linker script
+      run: python ${{ github.action_path }}/jira_issue_linker.py
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        PR_NUMBER: ${{ inputs.pr_number }}
+        REPO: ${{ inputs.repo }}
+        JIRA_BASE_URL: ${{ inputs.jira_base_url }}
+        JIRA_USER_EMAIL: ${{ inputs.jira_user_email }}
+        JIRA_API_TOKEN: ${{ inputs.jira_api_token }}
