@@ -3,10 +3,7 @@ description: 'Links Jira tickets to GitHub pull requests'
 inputs:
   github_token:
     description: 'GitHub token'
-    required: true
-  pr_number:
-    description: 'Pull request number'
-    required: true
+    default: ${{ github.token }}
   jira_base_url:
     description: 'Jira base URL'
     required: true
@@ -16,6 +13,7 @@ inputs:
   jira_api_token:
     description: 'Jira API token'
     required: true
+
 runs:
   using: 'composite'
   steps:
@@ -29,11 +27,11 @@ runs:
         pip install PyGithub==1.55 requests==2.26.0
       shell: bash
     - name: Run Jira Ticket Linker
-      run: python ${{ github.action_path }}/jira_issue_linker.py
-      shell: bash
+      run: python ${{ github.action_path }}/jira_ticket_linker.py
+      shell: python
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
-        PR_NUMBER: ${{ inputs.pr_number }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
         JIRA_BASE_URL: ${{ inputs.jira_base_url }}
         JIRA_USER_EMAIL: ${{ inputs.jira_user_email }}
