@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Jira Ticket Linker
+      - name: Run Jira Issue Linker
         uses: ./.github/actions/jira-issue-linker
         with:
           jira_base_url: ${{ secrets.JIRA_BASE_URL }}
