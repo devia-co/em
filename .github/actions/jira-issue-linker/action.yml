@@ -26,7 +26,7 @@ runs:
         python -m pip install --upgrade pip
         pip install PyGithub==1.55 requests==2.26.0
       shell: bash
-    - name: Run Jira Ticket Linker
+    - name: Run Jira Issue Linker
       run: python ${{ github.action_path }}/jira_issue_linker.py
       shell: python
       env:
