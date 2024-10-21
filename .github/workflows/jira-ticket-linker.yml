@@ -64,7 +64,7 @@ jobs:
           def create_jira_section(tickets):
               if not tickets:
                   return ""
-              section = "Jira Tickets:\n\n"
+              section = "Jira issues linked:\n\n"  # Updated title
               for ticket in tickets:
                   title = get_jira_ticket_info(ticket)
                   if title:
