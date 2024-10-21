@@ -2,7 +2,7 @@ name: Jira Ticket Linker
 
 on:
   pull_request:
-    types: [opened, reopened, edited]
+    types: [opened, reopened, edited, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -73,9 +73,12 @@ jobs:
                       section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket})\n"
               return section.strip()
 
-          def split_pr_body(body):
-              parts = re.split(r'\n---\n', body, 1)
-              return parts[-1].strip()
+          def update_pr_body(original_body, new_jira_section):
+              # Remove existing Jira section
+              body_without_jira = re.sub(r'Jira issues linked:\n\n.*?\n---\n', '', original_body, flags=re.DOTALL)
+              # Add new Jira section
+              delimiter = "\n---\n"
+              return f"{new_jira_section}{delimiter}{body_without_jira}".strip()
 
           g = Github(os.environ['GITHUB_TOKEN'])
           repo = g.get_repo(os.environ['REPO'])
@@ -99,13 +102,9 @@ jobs:
 
           print(f"Debug: New PR title: {new_title}")
 
-          # Split existing PR body
-          original_description = split_pr_body(pr.body or "")
-
           # Create new PR body
           new_jira_section = create_jira_section(sorted_tickets)
-          delimiter = "\n---\n"  # Clear delimiter
-          new_body = f"{new_jira_section}{delimiter}{original_description}" if new_jira_section else original_description
+          new_body = update_pr_body(pr.body or "", new_jira_section)
 
           print(f"Debug: New Jira section:\n{new_jira_section}")
 
