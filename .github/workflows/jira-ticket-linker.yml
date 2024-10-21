@@ -3,6 +3,12 @@ name: Jira Ticket Linker
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize]
+  workflow_dispatch:
+       inputs:
+         run_workflow:
+           description: 'Set to true to run this workflow (it will never be true)'
+           required: true
+           default: 'false'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
