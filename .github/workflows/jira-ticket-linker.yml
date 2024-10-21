@@ -59,7 +59,7 @@ jobs:
                   return title
               except Exception as e:
                   print(f"Error fetching info for {ticket}: {str(e)}")
-                  return "N/A"
+                  return None
 
           def create_jira_section(tickets):
               if not tickets:
@@ -67,8 +67,8 @@ jobs:
               section = "Jira issues linked:\n\n"
               for ticket in tickets:
                   title = get_jira_ticket_info(ticket)
-                  if title != "N/A":
-                      section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket}) {title}\n"
+                  if title:
+                      section += f"* {ticket} {title}\n"
                   else:
                       section += f"* {ticket} N/A\n"
               return section.strip()
@@ -89,4 +89,30 @@ jobs:
           tickets.update(extract_jira_tickets(pr.title))
           tickets.update(extract_jira_tickets(pr.head.ref))
           for commit in pr.get_commits():
-              tickets
+              tickets.update(extract_jira_tickets(commit.commit.message))
+
+          # Sort tickets by numeric value
+          sorted_tickets = sorted(tickets, key=lambda x: int(x.split('-')[1]))
+
+          print(f"Debug: Extracted tickets: {sorted_tickets}")
+
+          # Update PR title
+          new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)  # Remove existing tickets from title
+          new_title += ' ' + ' '.join(sorted_tickets)
+
+          print(f"Debug: New PR title: {new_title}")
+
+          # Create new PR body
+          new_jira_section = create_jira_section(sorted_tickets)
+          new_body = update_pr_body(pr.body or "", new_jira_section)
+
+          print(f"Debug: New Jira section:\n{new_jira_section}")
+
+          # Update PR
+          try:
+              pr.edit(title=new_title, body=new_body)
+              print("Debug: Successfully updated PR")
+          except Exception as e:
+              print(f"Error updating PR: {str(e)}")
+
+          EOF
