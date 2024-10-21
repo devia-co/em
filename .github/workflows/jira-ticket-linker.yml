@@ -1,7 +1,7 @@
 name: Jira Issue Linker Works
 
 on:
-  pull_request:
+  pull_reques:
     types: []
     #types: [opened, reopened, edited, synchronize]
 
