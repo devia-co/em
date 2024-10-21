@@ -68,7 +68,7 @@ jobs:
               for ticket in tickets:
                   title = get_jira_ticket_info(ticket)
                   if title:
-                      section += f"* {ticket} {title}\n"
+                      section += f"* [{ticket}]({os.environ['JIRA_BASE_URL']}/browse/{ticket}) {title}\n"
                   else:
                       section += f"* {ticket} N/A\n"
               return section.strip()
