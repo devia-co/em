@@ -1,4 +1,4 @@
-name: Jira Issue Linker
+name: Jira Issue Linker Works
 
 on:
   pull_request:
