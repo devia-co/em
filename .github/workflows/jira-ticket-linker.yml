@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install PyGithub requests
+          pip install PyGithub==1.55 requests==2.26.0
 
       - name: Extract and update Jira tickets
         env:
@@ -57,7 +57,7 @@ jobs:
                   title = data['fields']['summary']
                   print(f"Debug: Retrieved title for {ticket}: {title}")
                   return title
-              except Exception as e:
+              except requests.exceptions.RequestException as e:
                   print(f"Error fetching info for {ticket}: {str(e)}")
                   return None
 
@@ -74,45 +74,42 @@ jobs:
               return section.strip()
 
           def update_pr_body(original_body, new_jira_section):
-              # Remove existing Jira section
               body_without_jira = re.sub(r'Jira issues linked:\n\n.*?\n---\n', '', original_body, flags=re.DOTALL)
-              # Add new Jira section
               delimiter = "\n---\n"
               return f"{new_jira_section}{delimiter}{body_without_jira}".strip()
 
-          g = Github(os.environ['GITHUB_TOKEN'])
-          repo = g.get_repo(os.environ['REPO'])
-          pr = repo.get_pull(int(os.environ['PR_NUMBER']))
+          def main():
+              g = Github(os.environ['GITHUB_TOKEN'])
+              repo = g.get_repo(os.environ['REPO'])
+              pr = repo.get_pull(int(os.environ['PR_NUMBER']))
 
-          # Extract tickets from PR title, branch name, and commit messages
-          tickets = set()
-          tickets.update(extract_jira_tickets(pr.title))
-          tickets.update(extract_jira_tickets(pr.head.ref))
-          for commit in pr.get_commits():
-              tickets.update(extract_jira_tickets(commit.commit.message))
+              tickets = set()
+              tickets.update(extract_jira_tickets(pr.title))
+              tickets.update(extract_jira_tickets(pr.head.ref))
+              for commit in pr.get_commits():
+                  tickets.update(extract_jira_tickets(commit.commit.message))
 
-          # Sort tickets by numeric value
-          sorted_tickets = sorted(tickets, key=lambda x: int(x.split('-')[1]))
+              sorted_tickets = sorted(tickets, key=lambda x: int(x.split('-')[1]))
 
-          print(f"Debug: Extracted tickets: {sorted_tickets}")
+              print(f"Debug: Extracted tickets: {sorted_tickets}")
 
-          # Update PR title
-          new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)  # Remove existing tickets from title
-          new_title += ' ' + ' '.join(sorted_tickets)
+              new_title = re.sub(r'\s*SCRUM-\d+', '', pr.title)
+              new_title += ' ' + ' '.join(sorted_tickets)
 
-          print(f"Debug: New PR title: {new_title}")
+              print(f"Debug: New PR title: {new_title}")
 
-          # Create new PR body
-          new_jira_section = create_jira_section(sorted_tickets)
-          new_body = update_pr_body(pr.body or "", new_jira_section)
+              new_jira_section = create_jira_section(sorted_tickets)
+              new_body = update_pr_body(pr.body or "", new_jira_section)
 
-          print(f"Debug: New Jira section:\n{new_jira_section}")
+              print(f"Debug: New Jira section:\n{new_jira_section}")
 
-          # Update PR
-          try:
-              pr.edit(title=new_title, body=new_body)
-              print("Debug: Successfully updated PR")
-          except Exception as e:
-              print(f"Error updating PR: {str(e)}")
+              try:
+                  pr.edit(title=new_title, body=new_body)
+                  print("Debug: Successfully updated PR")
+              except Exception as e:
+                  print(f"Error updating PR: {str(e)}")
+
+          if __name__ == "__main__":
+              main()
 
           EOF
