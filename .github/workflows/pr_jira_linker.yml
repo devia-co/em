@@ -1,4 +1,4 @@
-name: Jira Ticket Linker
+name: Jira Issue Linker
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Jira Ticket Linker
-        uses: ./.github/actions/jira-ticket-linker
+        uses: ./.github/actions/jira-issue-linker
         with:
           jira_base_url: ${{ secrets.JIRA_BASE_URL }}
           jira_user_email: ${{ secrets.JIRA_USER_EMAIL }}
