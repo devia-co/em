@@ -2,8 +2,8 @@ name: Jira Ticket Linker
 
 on:
   pull_request:
-    types: []
-    #types: [opened, reopened, edited, synchronize]
+    #types: []
+    types: [opened, reopened, edited, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
