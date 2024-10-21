@@ -27,8 +27,8 @@ runs:
         pip install PyGithub==1.55 requests==2.26.0
       shell: bash
     - name: Run Jira Issue Linker
-      run: "python ${{ github.action_path }}/jira_issue_linker.py"
-      shell: bash
+      run: python ${{ github.action_path }}/jira_issue_linker.py
+      shell: python
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
