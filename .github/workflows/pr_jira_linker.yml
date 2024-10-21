@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Jira Ticket Linker
-        uses: ./.github/actions/jira-ticket-linker
+        uses: ./.github/actions/jira-issue-linker
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
