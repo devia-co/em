@@ -1,0 +1,28 @@
+name: Jira Issue Linker Works Split
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  update-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Run Jira Issue Linker
+        uses: ./.github/actions/jira-issue-linker
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          repo: ${{ github.repository }}
+          jira_base_url: ${{ secrets.JIRA_BASE_URL }}
+          jira_user_email: ${{ secrets.JIRA_USER_EMAIL }}
+          jira_api_token: ${{ secrets.JIRA_ACTION_TOKEN }}
