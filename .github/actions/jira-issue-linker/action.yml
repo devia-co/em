@@ -1,5 +1,5 @@
-name: 'Jira Ticket Linker'
-description: 'Links Jira tickets to GitHub pull requests'
+name: 'Jira Issue Linker'
+description: 'Links Jira issues to GitHub pull requests'
 inputs:
   github_token:
     description: 'GitHub token'
@@ -27,7 +27,7 @@ runs:
         pip install PyGithub==1.55 requests==2.26.0
       shell: bash
     - name: Run Jira Ticket Linker
-      run: python ${{ github.action_path }}/jira_ticket_linker.py
+      run: python ${{ github.action_path }}/jira_issue_linker.py
       shell: python
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
