@@ -1,4 +1,4 @@
-name: Jira Issue Linker Works
+name: Jira Issue Linker Works Split
 
 on:
   pull_request:
